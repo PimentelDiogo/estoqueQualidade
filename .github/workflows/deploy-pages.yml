@@ -67,6 +67,10 @@ jobs:
       - name: Fix SPA routing (copy index.html to 404.html)
         run: cp build/web/index.html build/web/404.html
 
+      # Landing page de apresentacao do projeto (docs/apresentacao.html).
+      - name: Copy landing page to build
+        run: cp docs/apresentacao.html build/web/apresentacao.html
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:

@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Espaço Café — Sistema de Vendas, Estoque e Pedidos</title>
+  <meta name="description" content="Sistema completo de PDV, controle de estoque e pedidos para o Espaço Café da Igreja Anglicana PAES Lagoa.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* ================================================================
+       DESIGN TOKENS — espelham lib/core/theme/app_colors.dart
+       ================================================================ */
+    :root {
+      --brand-black: #0D0D0D;
+      --brand-cream: #F5F0F2;
+      --brand-rose: #E8B4C8;
+      --brand-coffee: #8B5E3C;
+
+      --surface: #1A1A1A;
+      --surface-elevated: #242424;
+      --border: #333333;
+      --text-primary: #F5F0F2;
+      --text-secondary: #A8A0A3;
+      --text-disabled: #5C5659;
+
+      --success: #4CAF7D;
+      --warning: #E0A458;
+      --danger: #D9534F;
+      --info: #5B9BD5;
+      --pix: #32BCAD;
+
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 24px;
+
+      --font: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+
+    /* ================================================================
+       RESET & BASE
+       ================================================================ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html {
+      scroll-behavior: smooth;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      font-family: var(--font);
+      background: var(--brand-black);
+      color: var(--text-primary);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    a { color: var(--brand-rose); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ================================================================
+       NAV
+       ================================================================ */
+    .nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      background: rgba(13, 13, 13, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+    }
+
+    .nav-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+    }
+
+    .nav-brand {
+      font-weight: 800;
+      font-size: 1.15rem;
+      color: var(--text-primary);
+      letter-spacing: -0.02em;
+    }
+
+    .nav-brand span { color: var(--brand-rose); }
+
+    .nav-links {
+      display: flex;
+      gap: 32px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover {
+      color: var(--text-primary);
+      text-decoration: none;
+    }
+
+    @media (max-width: 640px) {
+      .nav-links { display: none; }
+    }
+
+    /* ================================================================
+       HERO
+       ================================================================ */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 120px 24px 80px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -40%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(232, 180, 200, 0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      padding: 6px 16px;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-bottom: 32px;
+      animation: fadeUp 0.6s ease-out both;
+    }
+
+    .hero-badge .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--success);
+      animation: pulse 2s infinite;
+    }
+
+    .hero h1 {
+      font-size: clamp(2.5rem, 6vw, 4.5rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 24px;
+      animation: fadeUp 0.6s ease-out 0.1s both;
+    }
+
+    .hero h1 .accent {
+      background: linear-gradient(135deg, var(--brand-rose), var(--brand-coffee));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-subtitle {
+      font-size: clamp(1rem, 2vw, 1.25rem);
+      color: var(--text-secondary);
+      max-width: 600px;
+      margin-bottom: 40px;
+      animation: fadeUp 0.6s ease-out 0.2s both;
+    }
+
+    .hero-cta {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      justify-content: center;
+      animation: fadeUp 0.6s ease-out 0.3s both;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 28px;
+      border-radius: var(--radius-md);
+      font-family: var(--font);
+      font-size: 0.95rem;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary {
+      background: var(--brand-rose);
+      color: var(--brand-black);
+    }
+
+    .btn-primary:hover {
+      background: #d9a0b8;
+      transform: translateY(-1px);
+      text-decoration: none;
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+    }
+
+    .btn-ghost:hover {
+      border-color: var(--text-secondary);
+      text-decoration: none;
+    }
+
+    /* ================================================================
+       SECTIONS
+       ================================================================ */
+    .section {
+      padding: 100px 24px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .section-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    .section-title {
+      font-size: clamp(1.75rem, 4vw, 2.75rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      margin-bottom: 16px;
+    }
+
+    .section-subtitle {
+      font-size: 1.05rem;
+      color: var(--text-secondary);
+      max-width: 640px;
+      margin-bottom: 48px;
+    }
+
+    /* ================================================================
+       OVERVIEW (alternating layout)
+       ================================================================ */
+    .overview {
+      padding: 80px 24px;
+      border-top: 1px solid var(--border);
+    }
+
+    .overview-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      text-align: center;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 24px;
+      margin-top: 48px;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 32px 24px;
+      transition: border-color 0.2s;
+    }
+
+    .stat-card:hover { border-color: var(--brand-rose); }
+
+    .stat-number {
+      font-size: 2.5rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+
+    .stat-label {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+
+    /* ================================================================
+       ROLE SECTIONS
+       ================================================================ */
+    .role-section {
+      padding: 100px 24px;
+      border-top: 1px solid var(--border);
+    }
+
+    .role-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .role-header {
+      margin-bottom: 56px;
+    }
+
+    .role-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      margin-bottom: 20px;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 20px;
+    }
+
+    .feature-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      transition: all 0.25s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .feature-card:hover {
+      border-color: var(--border);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      opacity: 0;
+      transition: opacity 0.25s;
+    }
+
+    .feature-card:hover::before { opacity: 1; }
+
+    .feature-emoji {
+      font-size: 1.5rem;
+      margin-bottom: 16px;
+      display: block;
+    }
+
+    .feature-card h3 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      letter-spacing: -0.01em;
+    }
+
+    .feature-card p {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    .feature-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 12px;
+      padding: 4px 10px;
+      border-radius: 100px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+    }
+
+    /* placeholder para screenshot */
+    .screenshot-placeholder {
+      background: var(--surface);
+      border: 1px dashed var(--border);
+      border-radius: var(--radius-lg);
+      padding: 64px 24px;
+      text-align: center;
+      color: var(--text-disabled);
+      font-size: 0.85rem;
+      margin-top: 40px;
+    }
+
+    /* ================================================================
+       ROLE COLOR THEMES
+       ================================================================ */
+
+    /* Caixa — verde */
+    .role-caixa .section-label { color: var(--success); }
+    .role-caixa .role-icon { background: rgba(76, 175, 125, 0.12); color: var(--success); }
+    .role-caixa .feature-card::before { background: linear-gradient(90deg, var(--success), transparent); }
+    .role-caixa .feature-tag { background: rgba(76, 175, 125, 0.12); color: var(--success); }
+
+    /* Admin — rosa */
+    .role-admin .section-label { color: var(--brand-rose); }
+    .role-admin .role-icon { background: rgba(232, 180, 200, 0.12); color: var(--brand-rose); }
+    .role-admin .feature-card::before { background: linear-gradient(90deg, var(--brand-rose), transparent); }
+    .role-admin .feature-tag { background: rgba(232, 180, 200, 0.12); color: var(--brand-rose); }
+
+    /* Cliente — azul/pix */
+    .role-cliente .section-label { color: var(--pix); }
+    .role-cliente .role-icon { background: rgba(50, 188, 173, 0.12); color: var(--pix); }
+    .role-cliente .feature-card::before { background: linear-gradient(90deg, var(--pix), transparent); }
+    .role-cliente .feature-tag { background: rgba(50, 188, 173, 0.12); color: var(--pix); }
+
+    /* TV — warning/amber */
+    .role-tv .section-label { color: var(--warning); }
+    .role-tv .role-icon { background: rgba(224, 164, 88, 0.12); color: var(--warning); }
+    .role-tv .feature-card::before { background: linear-gradient(90deg, var(--warning), transparent); }
+    .role-tv .feature-tag { background: rgba(224, 164, 88, 0.12); color: var(--warning); }
+
+    /* ================================================================
+       TECH STACK
+       ================================================================ */
+    .tech-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 16px;
+    }
+
+    .tech-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 24px;
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      transition: border-color 0.2s;
+    }
+
+    .tech-card:hover { border-color: var(--text-disabled); }
+
+    .tech-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-sm);
+      background: var(--surface-elevated);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      flex-shrink: 0;
+    }
+
+    .tech-card h3 {
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .tech-card p {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+
+    /* ================================================================
+       FOOTER
+       ================================================================ */
+    .footer {
+      border-top: 1px solid var(--border);
+      padding: 40px 24px;
+      text-align: center;
+    }
+
+    .footer-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      color: var(--text-disabled);
+      font-size: 0.85rem;
+    }
+
+    .footer a { color: var(--text-secondary); }
+
+    /* ================================================================
+       ANIMATIONS
+       ================================================================ */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%      { opacity: 0.4; }
+    }
+
+    /* Intersection Observer reveals */
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ================================================================
+       SCROLLBAR
+       ================================================================ */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: var(--brand-black); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-disabled); }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav class="nav">
+    <div class="nav-inner">
+      <div class="nav-brand">Espaço <span>Café</span></div>
+      <ul class="nav-links">
+        <li><a href="#caixa">Caixa</a></li>
+        <li><a href="#admin">Administrador</a></li>
+        <li><a href="#cliente">Cliente</a></li>
+        <li><a href="#tv">TV</a></li>
+        <li><a href="#tech">Stack</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-badge">
+      <span class="dot"></span>
+      Igreja Anglicana PAES Lagoa
+    </div>
+    <h1>
+      O café da igreja,<br>
+      <span class="accent">agora com sistema.</span>
+    </h1>
+    <p class="hero-subtitle">
+      PDV, controle de estoque, pedidos pelo QR da mesa e fila na TV — tudo pelo celular do voluntário, sem papel, sem planilha.
+    </p>
+    <div class="hero-cta">
+      <a href="#caixa" class="btn btn-primary">Ver funcionalidades</a>
+      <a href="#tech" class="btn btn-ghost">Stack técnica</a>
+    </div>
+  </section>
+
+  <!-- OVERVIEW -->
+  <section class="overview">
+    <div class="overview-inner">
+      <p class="section-label" style="color: var(--brand-coffee);">Visão geral</p>
+      <h2 class="section-title">Multi-ministério desde o schema</h2>
+      <p class="section-subtitle" style="max-width: 700px; margin-left: auto; margin-right: auto;">
+        O Espaço Café é o primeiro, mas a arquitetura já suporta outros ministérios no mesmo espaço — cada um com seu QR PIX, produtos, caixa e relatórios.
+      </p>
+
+      <div class="stats-grid reveal">
+        <div class="stat-card">
+          <div class="stat-number" style="color: var(--success);">4</div>
+          <div class="stat-label">Formas de pagamento<br><small style="color: var(--text-disabled);">PIX · Dinheiro · Cartão · Cortesia</small></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" style="color: var(--brand-rose);">4</div>
+          <div class="stat-label">Perfis de acesso<br><small style="color: var(--text-disabled);">Admin · Caixa · Cliente · TV</small></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" style="color: var(--pix);">0</div>
+          <div class="stat-label">Backend próprio<br><small style="color: var(--text-disabled);">Regra de negócio no Postgres</small></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" style="color: var(--warning);">4</div>
+          <div class="stat-label">Breakpoints responsivos<br><small style="color: var(--text-disabled);">Mobile · Tablet · Desktop · TV</small></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       CAIXA
+       ============================================================ -->
+  <section id="caixa" class="role-section role-caixa">
+    <div class="role-inner">
+      <div class="role-header reveal">
+        <div class="role-icon">☕</div>
+        <p class="section-label">Perfil: Caixa</p>
+        <h2 class="section-title">Vender rápido, com poucos toques</h2>
+        <p class="section-subtitle">
+          O voluntário opera no celular durante o culto, com luz baixa. Cada toque conta — alvos grandes, feedback imediato, zero confusão.
+        </p>
+      </div>
+
+      <div class="features-grid">
+        <div class="feature-card reveal">
+          <span class="feature-emoji">🛒</span>
+          <h3>PDV com carrinho</h3>
+          <p>Catálogo de produtos com busca, seleção rápida e carrinho lateral. No celular o carrinho abre como bottom sheet; no tablet fica sempre visível ao lado.</p>
+          <span class="feature-tag">MOBILE-FIRST</span>
+        </div>
+
+        <div class="feature-card reveal">
+          <span class="feature-emoji">💰</span>
+          <h3>4 formas de pagamento</h3>
+          <p>PIX (com QR estático copiável), dinheiro, cartão e cortesia. A conferência do PIX é manual pelo caixa — sem webhook, sem complexidade.</p>
+          <span class="feature-tag">ADR-005</span>
+        </div>
+
+        <div class="feature-card reveal">
+          <span class="feature-emoji">📦</span>
+          <h3>Baixa automática de estoque</h3>
+          <p>Ao confirmar a venda, a RPC <code>fn_registrar_venda</code> cria a venda, os itens e baixa o estoque — tudo numa transação. Impossível estoque negativo com dois caixas simultâneos.</p>
+          <span class="feature-tag">TRANSACIONAL</span>
+        </div>
+
+        <div class="feature-card reveal">
+          <span class="feature-emoji">🧾</span>
+          <h3>Vendas do turno</h3>
+          <p>Listagem das vendas feitas no dia, com total e detalhamento por item. O caixa consulta sem sair da tela do PDV.</p>
+        </div>
+
+        <div class="feature-card reveal">
+          <span class="feature-emoji">📋</span>
+          <h3>Fila de pedidos</h3>
+          <p>Quando o cliente pede pelo QR da mesa, o pedido aparece na fila do caixa. De lá ele avança o status (recebido → preparando → pronto → entregue) e cobra na hora.</p>
+          <span class="feature-tag">FASE 2</span>
+        </div>
+
+        <div class="feature-card reveal">
+          <span class="feature-emoji">🔄</span>
+          <h3>Pedido vira venda</h3>
+          <p>A RPC <code>fn_converter_pedido_em_venda</code> transforma o pedido em venda real, herdando a validação de estoque. Pedido abandonado não trava estoque de ninguém.</p>
+          <span class="feature-tag">FASE 2</span>
+        </div>
+      </div>
+
+      <div class="screenshot-placeholder">
+        📸 Screenshot do PDV virá aqui
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       ADMIN
+       ============================================================ -->
+  <section id="admin" class="role-section role-admin">
+    <div class="role-inner">
+      <div class="role-header reveal">
+        <div class="role-icon">🔑</div>
+        <p class="section-label">Perfil: Administrador</p>
+        <h2 class="section-title">Controle total, de qualquer lugar</h2>
+        <p class="section-subtitle">
+          O admin enxerga todos os ministérios, gerencia produtos, usuários e acompanha os resultados. A autorização real mora na RLS do Postgres, não no Flutter.
+        </p>
+      </div>
+
+      <div class="features-grid">
+        <div class="feature-card reveal">
+          <span class="feature-emoji">📊</span>
+          <h3>Relatórios por período</h3>
+          <p>Vendas por dia, semana e mês com gráficos de pizza por forma de pagamento e ranking de produtos mais vendidos. A agregação vem pronta da view <code>vw_vendas_periodo</code>.</p>
+          <span class="feature-tag">VIEW NO BANCO</span>
+        </div>
+
+        <div class="feature-card reveal">
+          <span class="feature-emoji">📦</span>
+          <h3>Gestão de estoque</h3>
+          <p>Cadastro de produtos com preço de custo e venda, estoque mínimo, código de barras. Movimentações de entrada, saída, ajuste e perda com histórico completo.</p>
+        </div>
+
+        <div class="feature-card reveal">
+          <span class="feature-emoji">🔔</span>
+          <h3>Alertas de estoque mínimo</h3>
+          <p>Quando a quantidade atinge o mínimo, um alerta é gerado automaticamente pelo trigger <code>trg_alerta_estoque</code>. O admin recebe e-mail via Edge Function com Resend.</p>
+          <span class="feature-tag">AUTOMÁTICO</span>
+        </div>
+
+        <div class="feature-card reveal">
+          <span class="feature-emoji">⛪</span>
+          <h3>Multi-ministério</h3>
+          <p>Cadastro de ministérios com nome, slug, responsável, QR PIX e mesas. Cada ministério opera de forma independente — caixa, estoque e relatórios isolados.</p>
+        </div>
+
+        <div class="feature-card reveal">
+          <span class="feature-emoji">👥</span>
+          <h3>Gestão de usuários</h3>
+          <p>Criação de usuários com papel (admin ou caixa) e vínculo a ministério. O caixa só enxerga o ministério ao qual foi atribuído — RLS garante.</p>
+          <span class="feature-tag">RBAC NA RLS</span>
+        </div>
+
+        <div class="feature-card reveal">
+          <span class="feature-emoji">📱</span>
+          <h3>QR Code PIX</h3>
+          <p>Payload BR Code configurável por ministério. O QR é renderizado no app para o cliente copiar ou escanear. Estático — sem confirmação automática de pagamento.</p>
+        </div>
+      </div>
+
+      <div class="screenshot-placeholder">
+        📸 Screenshot dos Relatórios virá aqui
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       CLIENTE
+       ============================================================ -->
+  <section id="cliente" class="role-section role-cliente">
+    <div class="role-inner">
+      <div class="role-header reveal">
+        <div class="role-icon">📱</div>
+        <p class="section-label">Perfil: Cliente</p>
+        <h2 class="section-title">Pedido pelo QR da mesa, sem app</h2>
+        <p class="section-subtitle">
+          O visitante da igreja escaneia o QR na mesa, escolhe os itens e envia. Sem login, sem cadastro, sem instalar nada — funciona no navegador do celular.
+        </p>
+      </div>
+
+      <div class="features-grid">
+        <div class="feature-card reveal">
+          <span class="feature-emoji">📷</span>
+          <h3>QR Code na mesa</h3>
+          <p>Cada mesa tem um QR com token único. O cliente escaneia e cai direto no cardápio do ministério, já identificado pela mesa. Sem login, rota pública.</p>
+        </div>
+
+        <div class="feature-card reveal">
+          <span class="feature-emoji">📋</span>
+          <h3>Cardápio interativo</h3>
+          <p>Lista de produtos com preço e descrição. O cliente adiciona itens com um toque, sem precisar entender nada do sistema — zero explicação necessária.</p>
+          <span class="feature-tag">ZERO FRICÇÃO</span>
+        </div>
+
+        <div class="feature-card reveal">
+          <span class="feature-emoji">🔢</span>
+          <h3>Senha de acompanhamento</h3>
+          <p>Ao enviar o pedido, o cliente recebe uma senha numérica. A tela muda para o acompanhamento em tempo real: recebido → preparando → pronto.</p>
+          <span class="feature-tag">REALTIME</span>
+        </div>
+
+        <div class="feature-card reveal">
+          <span class="feature-emoji">🔒</span>
+          <h3>Segurança sem login</h3>
+          <p>O preço vem do banco (não do cliente). A RPC <code>fn_criar_pedido</code> valida o token, aplica o preço real e limita a 30 itens por pedido. SECURITY DEFINER.</p>
+          <span class="feature-tag">ADR-004</span>
+        </div>
+      </div>
+
+      <div class="screenshot-placeholder">
+        📸 Screenshot do cardápio do cliente virá aqui
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       TV
+       ============================================================ -->
+  <section id="tv" class="role-section role-tv">
+    <div class="role-inner">
+      <div class="role-header reveal">
+        <div class="role-icon">📺</div>
+        <p class="section-label">Perfil: TV</p>
+        <h2 class="section-title">Fila de senhas no telão</h2>
+        <p class="section-subtitle">
+          Tela fixa no salão mostrando as senhas prontas e em preparo. Sem interação, sem login, tipografia gigante legível a metros de distância.
+        </p>
+      </div>
+
+      <div class="features-grid">
+        <div class="feature-card reveal">
+          <span class="feature-emoji">📡</span>
+          <h3>Atualização em tempo real</h3>
+          <p>A fila é alimentada pelo Supabase Realtime. Quando o caixa avança um pedido para "pronto", a TV atualiza instantaneamente — sem refresh.</p>
+          <span class="feature-tag">REALTIME</span>
+        </div>
+
+        <div class="feature-card reveal">
+          <span class="feature-emoji">🔤</span>
+          <h3>Tipografia 1.8×</h3>
+          <p>Breakpoint dedicado para telas ≥ 1920px. Senhas prontas à esquerda com destaque, em preparo à direita. Leitura confortável mesmo de longe.</p>
+          <span class="feature-tag">≥ 1920px</span>
+        </div>
+
+        <div class="feature-card reveal">
+          <span class="feature-emoji">🚫</span>
+          <h3>Sem valores monetários</h3>
+          <p>A TV nunca exibe preço, total ou qualquer informação financeira. A RPC <code>fn_fila_tv</code> projeta apenas senha e status — privacidade by design.</p>
+          <span class="feature-tag">PRIVACY</span>
+        </div>
+
+        <div class="feature-card reveal">
+          <span class="feature-emoji">🔗</span>
+          <h3>Acesso por token</h3>
+          <p>A rota <code>/tv/:token</code> é pública, identificada por um token único do ministério. Basta abrir a URL no navegador da TV e deixar rodando — sem senha, sem manutenção.</p>
+        </div>
+      </div>
+
+      <div class="screenshot-placeholder">
+        📸 Screenshot da TV virá aqui
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       TECH STACK
+       ============================================================ -->
+  <section id="tech" class="role-section" style="border-top: 1px solid var(--border);">
+    <div class="role-inner">
+      <div class="role-header reveal">
+        <p class="section-label" style="color: var(--brand-coffee);">Stack técnica</p>
+        <h2 class="section-title">Sem backend próprio</h2>
+        <p class="section-subtitle">
+          A regra de negócio crítica mora no Postgres via RPCs transacionais, triggers e RLS. O Flutter é só a interface.
+        </p>
+      </div>
+
+      <div class="tech-grid reveal">
+        <div class="tech-card">
+          <div class="tech-icon">💙</div>
+          <div>
+            <h3>Flutter Web</h3>
+            <p>SDK 3.44.9 via FVM. Dark-first, responsivo em 4 breakpoints, otimizado para mobile.</p>
+          </div>
+        </div>
+        <div class="tech-card">
+          <div class="tech-icon">⚡</div>
+          <div>
+            <h3>GetX</h3>
+            <p>Estado reativo, injeção de dependência por rota e navegação. Sem boilerplate, sem code gen.</p>
+          </div>
+        </div>
+        <div class="tech-card">
+          <div class="tech-icon">🐘</div>
+          <div>
+            <h3>Supabase (Postgres)</h3>
+            <p>Auth, Realtime, Storage e RPCs. Row Level Security em todas as tabelas.</p>
+          </div>
+        </div>
+        <div class="tech-card">
+          <div class="tech-icon">🔐</div>
+          <div>
+            <h3>RBAC na RLS</h3>
+            <p>A autorização é do Postgres, não do Flutter. O browser é código aberto — a UI só esconde rota.</p>
+          </div>
+        </div>
+        <div class="tech-card">
+          <div class="tech-icon">🔄</div>
+          <div>
+            <h3>RPCs transacionais</h3>
+            <p>Venda, estoque e movimentação numa chamada só. Impossível estoque negativo com 2 caixas.</p>
+          </div>
+        </div>
+        <div class="tech-card">
+          <div class="tech-icon">📧</div>
+          <div>
+            <h3>Edge Functions + Resend</h3>
+            <p>E-mail automático de estoque baixo via pg_cron. Sem servidor, sem fila, sem infra.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <p>Espaço Café · <a href="https://github.com/PimentelDiogo/estoqueQualidade" target="_blank" rel="noopener">GitHub</a> · Igreja Anglicana PAES Lagoa</p>
+    </div>
+  </footer>
+
+  <!-- Reveal animation on scroll -->
+  <script>
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+          }
+        });
+      },
+      { threshold: 0.1, rootMargin: '0px 0px -40px 0px' }
+    );
+
+    document.querySelectorAll('.reveal').forEach((el) => observer.observe(el));
+  </script>
+
+</body>
+</html>
