@@ -1,0 +1,78 @@
+# Deploy Flutter Web para GitHub Pages
+#
+# Pre-requisito: criar dois secrets no repositorio (Settings > Secrets > Actions):
+#   SUPABASE_URL       → https://tezyxlbkjjktppityyfg.supabase.co
+#   SUPABASE_ANON_KEY  → a anon key do projeto
+#
+# O deploy usa a API de Pages oficial (actions/deploy-pages), sem precisar
+# de branch gh-pages.
+
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+
+  # Permite rodar manualmente pelo botao "Run workflow" no GitHub.
+  workflow_dispatch:
+
+# Permissoes necessarias para o deploy via GitHub Pages.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Impede deploys simultaneos — cancela o anterior se um novo push chegar.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.44.9'
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build web
+        run: |
+          flutter build web --release \
+            --base-href "/estoqueQualidade/" \
+            --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }} \
+            --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }} \
+            --dart-define=APP_ENV=production
+
+      # Corrige roteamento SPA: o GitHub Pages retorna 404 para rotas como
+      # /pdv, /estoque etc. Copiando index.html para 404.html, o navegador
+      # carrega o Flutter e ele resolve a rota internamente.
+      - name: Fix SPA routing (copy index.html to 404.html)
+        run: cp build/web/index.html build/web/404.html
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
