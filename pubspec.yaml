@@ -1,0 +1,52 @@
+name: espaco_cafe
+description: "Sistema de vendas, estoque e pedidos do Espaco Cafe - PAES Lagoa"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.12.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+
+  # Backend: Postgres + Auth + Realtime + Storage
+  supabase_flutter: ^2.8.0
+
+  # Estado, DI e rotas (ADR-001)
+  get: ^4.7.3
+
+  # Persistencia local (qual ministerio o admin escolheu).
+  # shared_preferences e nao get_storage: o get_storage usa `dart:html`, que
+  # bloqueia o build em WebAssembly. Ver ADR-006.
+  shared_preferences: ^2.5.5
+
+  # Formatacao de moeda (pt_BR) e datas
+  intl: ^0.20.2
+
+  # QR PIX (exibir no caixa) e QR de mesa (imprimir)
+  qr_flutter: ^4.1.0
+
+  # Leitura de codigo de barras de produto (camera, funciona no web via getUserMedia)
+  mobile_scanner: ^7.0.1
+
+  # Graficos dos relatorios
+  fl_chart: ^1.0.0
+
+  # Export CSV dos relatorios (download no navegador)
+  web: ^1.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/

@@ -1,0 +1,47 @@
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  language:
+    strict-casts: true
+    strict-inference: true
+    strict-raw-types: true
+  errors:
+    # Regra 4 do CLAUDE.md: nada de cor/spacing/fonte hardcoded na View.
+    # O lint nao consegue ver "Color(0xFF...)" diretamente, mas estes ajudam:
+    prefer_const_constructors: warning
+    always_declare_return_types: warning
+    unused_import: error
+    unused_local_variable: error
+    # Falso-positivo no nosso padrao de DI: as ViewModels recebem os
+    # repositories como parametros NOMEADOS (mais legivel com 4 dependencias),
+    # e Dart nao permite `required this._repo` — parametro nomeado nao pode
+    # comecar com underscore. A atribuicao na lista de inicializacao e a unica
+    # forma de manter o campo privado.
+    prefer_initializing_formals: ignore
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+    - "build/**"
+
+linter:
+  rules:
+    # Arquitetura / legibilidade
+    - always_declare_return_types
+    - avoid_print                    # use debugPrint ou log
+    - prefer_final_locals
+    - prefer_single_quotes
+    - require_trailing_commas
+    - sort_child_properties_last
+    - unawaited_futures
+    - use_super_parameters
+
+    # Seguranca / corretude
+    - avoid_dynamic_calls
+    - cancel_subscriptions           # streams do Realtime precisam ser canceladas
+    - close_sinks
+    - only_throw_errors
+    - throw_in_finally
+
+    # Consistencia de imports
+    - directives_ordering
+    - prefer_relative_imports
