@@ -45,13 +45,21 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Create env.json from secrets
+        run: |
+          cat <<EOF > env.json
+          {
+            "SUPABASE_URL": "${{ secrets.SUPABASE_URL }}",
+            "SUPABASE_ANON_KEY": "${{ secrets.SUPABASE_ANON_KEY }}",
+            "APP_ENV": "production"
+          }
+          EOF
+
       - name: Build web
         run: |
           flutter build web --release \
             --base-href "/estoqueQualidade/" \
-            --dart-define=SUPABASE_URL=${{ secrets.SUPABASE_URL }} \
-            --dart-define=SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }} \
-            --dart-define=APP_ENV=production
+            --dart-define-from-file=env.json
 
       # Corrige roteamento SPA: o GitHub Pages retorna 404 para rotas como
       # /pdv, /estoque etc. Copiando index.html para 404.html, o navegador
