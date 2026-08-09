@@ -115,9 +115,18 @@ class AppShell extends StatelessWidget {
         auth.perfil.value?.papel,
       );
 
-      final int indiceAtual = visiveis.indexWhere(
-        (DestinoNav d) => rotaAtual.startsWith(d.rota),
-      );
+      // Encontra o destino cuja rota e o prefixo mais longo da rota atual.
+      // Sem isso, /estoque/alertas casava com /estoque (Estoque) em vez de
+      // /estoque/alertas (Alertas), pois indexWhere devolve o primeiro match.
+      int indiceAtual = -1;
+      int maiorPrefixo = 0;
+      for (int i = 0; i < visiveis.length; i++) {
+        final String rota = visiveis[i].rota;
+        if (rotaAtual.startsWith(rota) && rota.length > maiorPrefixo) {
+          maiorPrefixo = rota.length;
+          indiceAtual = i;
+        }
+      }
 
       return ResponsiveLayout(
         mobile: (_) => _ComBarraInferior(
