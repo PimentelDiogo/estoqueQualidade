@@ -12,21 +12,17 @@ class PedidoRepositorySupabase implements PedidoRepository {
   @override
   Future<Result<List<ItemCardapio>>> cardapio(String qrToken) =>
       _supabase.executar<List<ItemCardapio>>(() async {
-        // Primeiro descobre o ministério da mesa (a view não conhece o token).
-        final Map<String, dynamic> mesa = await _supabase.client
-            .from('mesa')
-            .select('ministerio_id, identificador')
-            .eq('qr_token', qrToken)
-            .eq('ativo', true)
-            .single();
+        // RPC e nao leitura de tabela: o cliente e ANONIMO e a policy de `mesa`
+        // e `to authenticated`. Ler a tabela aqui devolvia zero linhas e a tela
+        // do cliente abria com erro (corrigido na migration 20260807120600).
+        final dynamic rows = await _supabase.client.rpc<dynamic>(
+          'fn_cardapio_por_token',
+          params: <String, dynamic>{'p_qr_token': qrToken},
+        );
 
-        final List<Map<String, dynamic>> rows = await _supabase.client
-            .from('vw_cardapio')
-            .select()
-            .eq('ministerio_id', mesa['ministerio_id'] as String)
-            .order('nome');
-
-        return rows.map(ItemCardapio.fromMap).toList();
+        return (rows as List<dynamic>)
+            .map((dynamic e) => ItemCardapio.fromMap(e as Map<String, dynamic>))
+            .toList();
       }, contexto: 'cardapio');
 
   @override

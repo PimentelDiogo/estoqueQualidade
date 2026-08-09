@@ -114,6 +114,27 @@ class SupabaseService extends GetxService {
     if (msg.contains('produto_nao_encontrado')) {
       return AppFailure.negocio('Produto nao encontrado.', detalhe);
     }
+    if (msg.contains('mesa_invalida')) {
+      return AppFailure.negocio(
+        'QR da mesa invalido ou desativado. Peca ajuda no caixa.',
+        detalhe,
+      );
+    }
+    if (msg.contains('pedido_sem_itens')) {
+      return AppFailure.negocio('Escolha ao menos um item.', detalhe);
+    }
+    if (msg.contains('pedido_muito_grande')) {
+      return AppFailure.negocio(
+        'Pedido grande demais. Divida em dois ou peca no caixa.',
+        detalhe,
+      );
+    }
+    if (msg.contains('pedido_ja_cobrado')) {
+      return AppFailure.negocio('Este pedido ja foi cobrado.', detalhe);
+    }
+    if (msg.contains('pedido_nao_encontrado')) {
+      return AppFailure.negocio('Pedido nao encontrado.', detalhe);
+    }
     if (msg.contains('quantidade_invalida')) {
       return AppFailure.validacao('Quantidade invalida.', detalhe);
     }
